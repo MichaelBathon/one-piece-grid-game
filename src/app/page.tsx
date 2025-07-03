@@ -201,13 +201,6 @@ const characterVideos: { [key: string]: string } = {
   "Brannew": "hT_nvWreIhg",
 };
 
-function validateAnswer(aff: string, attr: string, answer: string) {
-  const key = `${aff}|${attr}`;
-  return (
-    correctAnswers[key]?.toLowerCase() === answer.trim().toLowerCase()
-  );
-}
-
 export default function OnePieceGrid() {
   const { dateSeed } = useContext(DateSeedContext);
   const affiliations = useMemo(() => seededShuffle(allAffiliations, dateSeed).slice(0, 3), [dateSeed]);
