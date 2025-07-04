@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useContext } from "react";
+import React, { useState, useMemo, useContext, useEffect } from "react";
 import { DateSeedContext } from "./theme-provider";
 
 const allAffiliations = [
@@ -207,12 +207,20 @@ export default function OnePieceGrid() {
   const attributes = useMemo(() => seededShuffle(allAttributes, dateSeed + "x").slice(0, 3), [dateSeed]);
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [feedback, setFeedback] = useState<Record<string, "correct" | "incorrect" | undefined>>({});
+  const [feedback, setFeedback] = useState<Record<string, "correct" | "incorrect" | "revealed" | undefined>>({});
   const [showHint, setShowHint] = useState<Record<string, boolean>>({});
   const [videoCell, setVideoCell] = useState<string | null>(null);
   const [video, setVideo] = useState<string | null>(null);
   const [videoChar, setVideoChar] = useState<string | null>(null);
   const [videosEnabled, setVideosEnabled] = useState<boolean>(true);
+  const [guesses, setGuesses] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setAnswers({});
+    setFeedback({});
+    setGuesses({});
+    setShowHint({});
+  }, [dateSeed]);
 
   const handleInput = (
     aff: string,
@@ -233,22 +241,25 @@ export default function OnePieceGrid() {
       const key = `${aff}|${attr}`;
       const answer = answers[key] || "";
       if (!answer) return;
+      if (feedback[key] === "correct" || (guesses[key] ?? 0) >= 3) return;
       const isCorrect = correctAnswers[key]?.toLowerCase() === answer.trim().toLowerCase();
-      setFeedback((prev) => ({
-        ...prev,
-        [key]: isCorrect ? "correct" : "incorrect",
-      }));
-      if (isCorrect && videosEnabled) {
-        const charName = correctAnswers[key];
-        if (characterVideos[charName]) {
-          setVideo(characterVideos[charName]);
-          setVideoChar(charName);
-          setVideoCell(key);
-        } else {
-          setVideo(null);
-          setVideoChar(null);
-          setVideoCell(null);
+      if (isCorrect) {
+        setFeedback((prev) => ({ ...prev, [key]: "correct" }));
+        if (videosEnabled) {
+          const charName = correctAnswers[key];
+          if (characterVideos[charName]) {
+            setVideo(characterVideos[charName]);
+            setVideoChar(charName);
+            setVideoCell(key);
+          } else {
+            setVideo(null);
+            setVideoChar(null);
+            setVideoCell(null);
+          }
         }
+      } else {
+        setFeedback((prev) => ({ ...prev, [key]: "incorrect" }));
+        setGuesses((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
       }
     }
   };
@@ -261,7 +272,7 @@ export default function OnePieceGrid() {
   const handleReveal = (aff: string, attr: string) => {
     const key = `${aff}|${attr}`;
     setAnswers((prev) => ({ ...prev, [key]: correctAnswers[key] || "" }));
-    setFeedback((prev) => ({ ...prev, [key]: "correct" }));
+    setFeedback((prev) => ({ ...prev, [key]: "revealed" }));
     setShowHint((prev) => ({ ...prev, [key]: false }));
   };
 
@@ -272,11 +283,10 @@ export default function OnePieceGrid() {
         className="absolute inset-0 -z-10 w-full h-full bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url(/onepiece-map.jpg)',
-          filter: 'blur(8px) brightness(0.7)',
         }}
       />
       {/* Glass card */}
-      <div className="w-full max-w-2xl rounded-3xl bg-white/30 dark:bg-zinc-900/40 shadow-2xl border border-white/40 dark:border-zinc-800/60 backdrop-blur-2xl p-2 sm:p-4 md:p-8 mx-auto relative overflow-visible">
+      <div className="w-full max-w-2xl rounded-3xl bg-white/5 dark:bg-zinc-900/10 shadow-2xl border border-white/10 dark:border-zinc-800/20 p-2 sm:p-4 md:p-8 mx-auto relative overflow-visible">
         {/* User settings toggle */}
         <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
           <label htmlFor="toggle-videos" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 select-none cursor-pointer">Videos</label>
@@ -332,7 +342,9 @@ export default function OnePieceGrid() {
               </div>
               {attributes.map((attr) => {
                 const key = `${aff}|${attr}`;
-                // Only show video modal, not in cell
+                const guessCount = guesses[key] ?? 0;
+                const isCorrect = feedback[key] === "correct";
+                const isLocked = isCorrect || guessCount >= 3;
                 return (
                   <div
                     key={attr}
@@ -345,6 +357,8 @@ export default function OnePieceGrid() {
                           ? "border-green-500 ring-2 ring-green-400"
                           : feedback[key] === "incorrect"
                           ? "border-red-400 ring-2 ring-red-300"
+                          : feedback[key] === "revealed"
+                          ? "border-red-500 ring-2 ring-red-400"
                           : "border-white/60 dark:border-zinc-700"}
                       `}
                       value={answers[key] || ""}
@@ -352,28 +366,45 @@ export default function OnePieceGrid() {
                       onKeyDown={(e) => handleKeyDown(e, aff, attr)}
                       placeholder="?"
                       autoComplete="off"
+                      disabled={isLocked}
                     />
+                    {/* Guess indicators */}
+                    <div className="flex gap-1 mt-2 mb-1">
+                      {[0,1,2].map(i => (
+                        <div key={i} className={`w-3 h-3 rounded-full border border-gray-400 dark:border-gray-600 ${guessCount > i ? 'bg-red-500' : 'bg-gray-200 dark:bg-zinc-800'}`}></div>
+                      ))}
+                    </div>
                     {feedback[key] === "correct" && (
                       <div className="text-green-600 dark:text-green-400 text-xs sm:text-sm mt-1 font-bold drop-shadow">Correct!</div>
                     )}
-                    {feedback[key] === "incorrect" && (
+                    {feedback[key] === "incorrect" && guessCount < 3 && (
                       <div className="text-red-700 dark:text-red-300 text-xs sm:text-sm mt-1 font-bold drop-shadow">Try again</div>
                     )}
+                    {feedback[key] === "revealed" && (
+                      <div className="text-red-700 dark:text-red-300 text-xs sm:text-sm mt-1 font-bold drop-shadow">Better luck next time!</div>
+                    )}
                     <div className="flex gap-2 justify-center mt-2">
-                      <button
-                        className="px-2 py-1 text-xs sm:text-sm rounded bg-blue-100/80 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 border border-blue-200/60 dark:border-blue-700/60 transition font-semibold shadow"
-                        onClick={() => handleHint(aff, attr)}
-                        disabled={showHint[key]}
-                      >
-                        Hint
-                      </button>
-                      <button
-                        className="px-2 py-1 text-xs sm:text-sm rounded bg-gray-200/80 dark:bg-zinc-800/60 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-zinc-700 border border-gray-300/60 dark:border-zinc-700/60 transition font-semibold shadow"
-                        onClick={() => handleReveal(aff, attr)}
-                      >
-                        Reveal
-                      </button>
+                      {/* Show Hint button only after 1st incorrect guess, before 3rd */}
+                      {guessCount > 0 && guessCount < 3 && !isCorrect && (
+                        <button
+                          className="px-2 py-1 text-xs sm:text-sm rounded bg-blue-100/80 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 border border-blue-200/60 dark:border-blue-700/60 transition font-semibold shadow"
+                          onClick={() => handleHint(aff, attr)}
+                          disabled={showHint[key]}
+                        >
+                          Hint
+                        </button>
+                      )}
+                      {/* Show Reveal button only after 3rd incorrect guess and not correct */}
+                      {guessCount >= 3 && !isCorrect && feedback[key] !== "revealed" && (
+                        <button
+                          className="px-2 py-1 text-xs sm:text-sm rounded bg-gray-200/80 dark:bg-zinc-800/60 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-zinc-700 border border-gray-300/60 dark:border-zinc-700/60 transition font-semibold shadow"
+                          onClick={() => handleReveal(aff, attr)}
+                        >
+                          Reveal
+                        </button>
+                      )}
                     </div>
+                    {/* Show hint if requested */}
                     {showHint[key] && hints[key] && (
                       <div className="text-xs sm:text-sm mt-1 text-blue-700 dark:text-blue-300 italic font-semibold drop-shadow">{hints[key]}</div>
                     )}

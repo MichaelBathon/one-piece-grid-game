@@ -20,7 +20,7 @@
 }
 
 body {
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  background: url('/onepiece-map.jpg') center center / cover no-repeat fixed;
   color: var(--foreground);
   font-family: 'Inter', 'Geist', 'Segoe UI', Arial, sans-serif;
 }
