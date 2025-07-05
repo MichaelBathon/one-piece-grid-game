@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import { FaThLarge, FaTrophy, FaQuestionCircle, FaSignInAlt, FaCalendarAlt } from 'react-icons/fa';
+import { FaThLarge, FaTrophy, FaQuestionCircle, FaSignInAlt, FaCalendarAlt, FaSignOutAlt, FaUser } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
+import { useSession, signOut } from "next-auth/react";
 
 const getSystemTheme = () =>
   window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -13,6 +14,7 @@ export const DateSeedContext = React.createContext({
 });
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>("system");
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>("light");
   const [dateSeed, setDateSeed] = useState<string>(new Date().toISOString().slice(0, 10));
@@ -29,8 +31,10 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       setTheme(saved);
       setResolvedTheme(saved);
     } else {
-      setTheme('system');
-      setResolvedTheme(getSystemTheme());
+      // Start with system preference
+      const systemTheme = getSystemTheme();
+      setTheme(systemTheme);
+      setResolvedTheme(systemTheme);
     }
   }, []);
 
@@ -45,24 +49,28 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   // Apply theme to <html> element
   useEffect(() => {
     const html = document.documentElement;
-    if (theme === 'dark' || (theme === 'system' && resolvedTheme === 'dark')) {
+    console.log('Theme change:', { theme, resolvedTheme });
+    
+    if (theme === 'dark') {
       html.classList.add('dark');
+      console.log('Added dark class to html');
     } else {
       html.classList.remove('dark');
+      console.log('Removed dark class from html');
     }
-    if (theme === 'system') {
-      localStorage.removeItem('theme');
-    } else {
+    
+    // Only save to localStorage if user has explicitly chosen light or dark
+    // Don't save system preference to avoid overriding it
+    if (theme === 'light' || theme === 'dark') {
       localStorage.setItem('theme', theme);
     }
+    
+    console.log('Current html classes:', html.classList.toString());
   }, [theme, resolvedTheme]);
 
-  let icon = '🌗';
-  let label = 'System';
-  if (theme === 'light') {
-    icon = '☀️';
-    label = 'Light';
-  } else if (theme === 'dark') {
+  let icon = '☀️';
+  let label = 'Light';
+  if (theme === 'dark') {
     icon = '🌙';
     label = 'Dark';
   }
@@ -91,10 +99,115 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   return (
     <DateSeedContext.Provider value={{ dateSeed, setDateSeed }}>
       <div className="min-h-screen bg-transparent flex flex-col">
-        {/* Sidebar: curved, collapsible */}
+        {/* Header: full width at top */}
+        <header className="sticky top-0 z-30 w-full flex items-center justify-between px-2 sm:px-6 py-2 bg-gradient-to-r from-slate-500 via-slate-400 to-slate-300 dark:from-slate-700 dark:via-slate-600 dark:to-slate-500 shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="text-lg sm:text-xl font-semibold text-white drop-shadow">Daily Game: <span className="font-mono text-slate-200">{dateSeed}</span></div>
+            <button
+              onClick={handleRandomize}
+              className="px-2 sm:px-3 py-1 rounded-lg bg-slate-700 text-white hover:bg-slate-800 border border-slate-600 text-xs font-semibold transition shadow"
+            >
+              Randomize
+            </button>
+            <button
+              ref={pastGamesBtnRef}
+              onClick={handlePastGames}
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 rounded-lg bg-slate-700 text-white hover:bg-slate-800 border border-slate-600 text-xs font-semibold transition shadow relative"
+            >
+              <FaCalendarAlt className="text-sm sm:text-base" />
+              <span className="hidden sm:inline">Past Games</span>
+            </button>
+            {/* Date Picker Popover */}
+            {showDatePicker && (
+              <div
+                className="absolute z-50 mt-2 left-0"
+                style={{
+                  top: pastGamesBtnRef.current?.offsetTop ? (pastGamesBtnRef.current.offsetTop + pastGamesBtnRef.current.offsetHeight + 8) : undefined,
+                  left: pastGamesBtnRef.current?.offsetLeft ? pastGamesBtnRef.current.offsetLeft : undefined,
+                }}
+              >
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col items-center gap-4 w-64 sm:w-80 border border-slate-200 dark:border-slate-700">
+                  <div className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2"><FaCalendarAlt />Select a date</div>
+                  <input
+                    ref={dateInputRef}
+                    type="date"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    max={new Date().toISOString().slice(0, 10)}
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      className="px-3 sm:px-4 py-2 rounded-lg bg-slate-600 text-white font-semibold hover:bg-slate-700 transition text-sm"
+                      onClick={handleDatePick}
+                    >Select</button>
+                    <button
+                      className="px-3 sm:px-4 py-2 rounded-lg bg-gray-200 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-zinc-700 transition text-sm"
+                      onClick={() => setShowDatePicker(false)}
+                    >Cancel</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => {
+                console.log('Theme button clicked, current theme:', theme);
+                const newTheme = theme === 'dark' ? 'light' : 'dark';
+                console.log('Setting new theme to:', newTheme);
+                setTheme(newTheme);
+              }}
+              className="rounded-full p-1.5 sm:p-2 bg-slate-600 text-white hover:bg-slate-700 transition shadow"
+              aria-label="Toggle theme"
+              type="button"
+            >
+              <span role="img" aria-label={label} className="text-sm sm:text-base">{icon}</span>
+            </button>
+            
+            {status === "loading" ? (
+              <div className="text-white font-medium drop-shadow text-sm sm:text-base hidden sm:inline">
+                Loading...
+              </div>
+            ) : session ? (
+              <div className="flex items-center gap-2">
+                {session.user?.image && (
+                  <img
+                    src={session.user.image}
+                    alt={session.user.name || "User"}
+                    className="w-8 h-8 rounded-full border-2 border-white"
+                  />
+                )}
+                <span className="text-white font-medium drop-shadow text-sm sm:text-base hidden sm:inline">
+                  Welcome, {session.user?.name || "User"}!
+                </span>
+                <button
+                  onClick={() => signOut()}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 border border-red-500 text-xs font-semibold transition shadow"
+                >
+                  <FaSignOutAlt className="text-xs" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-white font-medium drop-shadow text-sm sm:text-base hidden sm:inline">
+                  Welcome, Guest!
+                </span>
+                <a
+                  href="/auth/signin"
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 text-xs font-semibold transition shadow"
+                >
+                  <FaSignInAlt className="text-xs" />
+                  <span className="hidden sm:inline">Sign In</span>
+                </a>
+              </div>
+            )}
+          </div>
+        </header>
+        
+        {/* Sidebar: below header */}
         <aside
-          className={`fixed top-0 left-0 h-full z-40 flex flex-col items-center transition-all duration-300
-            bg-gradient-to-b from-blue-600 via-blue-500 to-blue-400 dark:from-blue-900 dark:via-blue-800 dark:to-blue-700 shadow-2xl
+          className={`fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 flex flex-col items-center transition-all duration-300
+            bg-gradient-to-b from-slate-500 via-slate-400 to-slate-300 dark:from-slate-700 dark:via-slate-600 dark:to-slate-500 shadow-2xl
             ${sidebarOpen ? (sidebarCollapsed ? 'w-16' : 'w-64') : 'w-0 p-0'}
             p-0 md:rounded-r-[3rem]
             ${!sidebarOpen ? 'pointer-events-none' : ''}
@@ -103,7 +216,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
         >
           {/* Collapse/Expand button (always visible) */}
           <button
-            className="absolute top-4 right-2 text-xl text-white hover:text-blue-200 z-20 bg-blue-700/70 dark:bg-blue-900/70 rounded-full p-1 border border-blue-200 dark:border-blue-800 shadow"
+            className="absolute top-4 right-2 text-xl text-white hover:text-slate-200 z-20 bg-slate-600/70 dark:bg-slate-800/70 rounded-full p-1 border border-slate-200 dark:border-slate-700 shadow"
             onClick={() => setSidebarCollapsed((c) => !c)}
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             type="button"
@@ -114,13 +227,6 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             )}
           </button>
-          {/* Close button for mobile */}
-          <button
-            className="md:hidden absolute top-4 left-2 text-2xl text-white hover:text-red-400 z-10 bg-blue-700/70 dark:bg-blue-900/70 rounded-full px-2 py-1"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar"
-            type="button"
-          >✕</button>
           <div className={`flex flex-col items-center w-full h-full pt-16 pb-8 transition-all duration-300 ${sidebarCollapsed ? 'px-0' : 'px-4'}`}>
             {/* Logo */}
             <div className={`mb-10 w-full flex items-center justify-center transition-all duration-300 ${sidebarCollapsed ? 'justify-center' : 'justify-start'}`}>
@@ -130,21 +236,21 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
             {/* Nav */}
             <nav className="flex flex-col gap-4 w-full">
               <button
-                className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-blue-700/60 dark:hover:bg-blue-800/60 transition font-semibold text-white ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
+                className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-slate-600/60 dark:hover:bg-slate-700/60 transition font-semibold text-white ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
                 onClick={() => alert('My Grid clicked!')}
               >
                 <FaThLarge className="text-xl" />
                 {!sidebarCollapsed && <span>My Grid</span>}
               </button>
               <button
-                className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-blue-700/60 dark:hover:bg-blue-800/60 transition font-semibold text-white ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
+                className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-slate-600/60 dark:hover:bg-slate-700/60 transition font-semibold text-white ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
                 onClick={() => alert('Leaderboard clicked!')}
               >
                 <FaTrophy className="text-xl" />
                 {!sidebarCollapsed && <span>Leaderboard</span>}
               </button>
               <button
-                className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-blue-700/60 dark:hover:bg-blue-800/60 transition font-semibold text-white ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
+                className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-slate-600/60 dark:hover:bg-slate-700/60 transition font-semibold text-white ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
                 onClick={() => alert('How To Play clicked!')}
               >
                 <FaQuestionCircle className="text-xl" />
@@ -152,7 +258,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
               </button>
             </nav>
             <div className="mt-auto w-full">
-              <button className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl bg-blue-800 hover:bg-blue-900 dark:bg-blue-900 dark:hover:bg-blue-950 text-white font-semibold transition ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}>
+              <button className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl bg-slate-700 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-900 text-white font-semibold transition ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}>
                 <FaSignInAlt className="text-xl" />
                 {!sidebarCollapsed && <span>Sign In</span>}
               </button>
@@ -160,77 +266,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
           </div>
         </aside>
         {/* Main content (with left margin on desktop) */}
-        <div className="flex-1 flex flex-col min-h-screen md:ml-64">
-          {/* Header (desktop) */}
-          <header className="sticky top-0 z-20 w-full flex items-center justify-between px-2 sm:px-6 py-3 md:py-4 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 dark:from-blue-900 dark:via-blue-800 dark:to-blue-700 shadow-lg rounded-b-3xl md:rounded-b-[2.5rem] mx-auto transition-all duration-300 relative">
-            <div className="flex items-center gap-4">
-              {/* Hamburger for mobile */}
-              <button
-                className="md:hidden flex items-center justify-center p-2 rounded-full bg-blue-700/80 text-white hover:bg-blue-800 transition"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open sidebar"
-                type="button"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
-              </button>
-              <div className="text-xl font-semibold text-white drop-shadow">Daily Game: <span className="font-mono text-blue-200">{dateSeed}</span></div>
-              <button
-                onClick={handleRandomize}
-                className="px-3 py-1 rounded-lg bg-blue-800 text-white hover:bg-blue-900 border border-blue-900 text-xs font-semibold transition shadow"
-              >
-                Randomize
-              </button>
-              <button
-                ref={pastGamesBtnRef}
-                onClick={handlePastGames}
-                className="flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-800 text-white hover:bg-blue-900 border border-blue-900 text-xs font-semibold transition shadow relative"
-              >
-                <FaCalendarAlt className="text-base" />
-                Past Games
-              </button>
-              {/* Date Picker Popover */}
-              {showDatePicker && (
-                <div
-                  className="absolute z-50 mt-2 left-0"
-                  style={{
-                    top: pastGamesBtnRef.current?.offsetTop ? (pastGamesBtnRef.current.offsetTop + pastGamesBtnRef.current.offsetHeight + 8) : undefined,
-                    left: pastGamesBtnRef.current?.offsetLeft ? pastGamesBtnRef.current.offsetLeft : undefined,
-                  }}
-                >
-                  <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 w-80 border border-blue-200 dark:border-blue-700">
-                    <div className="text-lg font-bold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2"><FaCalendarAlt />Select a date</div>
-                    <input
-                      ref={dateInputRef}
-                      type="date"
-                      className="w-full px-3 py-2 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-zinc-800 text-blue-900 dark:text-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                      max={new Date().toISOString().slice(0, 10)}
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        className="px-4 py-2 rounded-lg bg-blue-700 text-white font-semibold hover:bg-blue-800 transition"
-                        onClick={handleDatePick}
-                      >Select</button>
-                      <button
-                        className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-zinc-700 transition"
-                        onClick={() => setShowDatePicker(false)}
-                      >Cancel</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark')}
-                className="rounded-full p-2 bg-blue-700 text-white hover:bg-blue-800 transition shadow"
-                aria-label="Toggle theme"
-                type="button"
-              >
-                <span role="img" aria-label={label}>{icon}</span>
-              </button>
-              <span className="text-white font-medium drop-shadow">Welcome, Guest!</span>
-            </div>
-          </header>
+        <div className="flex-1 flex flex-col min-h-screen md:ml-64 pt-16">
           <main className="flex-1 flex flex-col items-center justify-start px-2 sm:px-4 md:px-8 py-4 md:py-8 w-full max-w-5xl mx-auto">
             {children}
           </main>
