@@ -257,12 +257,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                 {!sidebarCollapsed && <span>How To Play</span>}
               </button>
             </nav>
-            <div className="mt-auto w-full">
-              <button className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl bg-slate-700 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-900 text-white font-semibold transition ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}>
-                <FaSignInAlt className="text-xl" />
-                {!sidebarCollapsed && <span>Sign In</span>}
-              </button>
-            </div>
+            {/* Removed duplicate sign-in button - authentication is handled in header */}
           </div>
         </aside>
         {/* Main content (with left margin on desktop) */}
