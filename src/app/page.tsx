@@ -1,46 +1,7 @@
 "use client";
 import React, { useState, useMemo, useContext, useEffect } from "react";
 import { DateSeedContext } from "./theme-provider";
-
-const allAffiliations = [
-  "Straw Hat Pirates",
-  "Marines",
-  "Warlords",
-  "Yonko",
-  "Revolutionaries",
-  "Villains",
-  "Allies",
-  "World Government",
-  "Pirate Crews",
-  "Minks",
-  "Fish-Men",
-  "Samurai",
-  "Giants",
-  "Civilians",
-  "Scientists",
-  "Royalty",
-];
-
-const allAttributes = [
-  "Captain",
-  "Swordsman",
-  "Navigator",
-  "Sniper",
-  "Doctor",
-  "Cook",
-  "Shipwright",
-  "Archaeologist",
-  "Musician",
-  "Devil Fruit User",
-  "Haki User",
-  "Zoan User",
-  "Logia User",
-  "Paramecia User",
-  "Ancient Weapon",
-  "Bounty Hunter",
-  "Inventor",
-  "Villain",
-];
+import { getGameData, onePieceCharacters } from "./game-data";
 
 // Deterministic shuffle using a seed (date string)
 function seededShuffle<T>(array: T[], seed: string): T[] {
@@ -317,48 +278,44 @@ const characterVideos: { [key: string]: string } = {
 
 export default function OnePieceGrid() {
   const { dateSeed } = useContext(DateSeedContext);
-  const affiliations = useMemo(() => seededShuffle(allAffiliations, dateSeed).slice(0, 3), [dateSeed]);
-  const attributes = useMemo(() => seededShuffle(allAttributes, dateSeed + "x").slice(0, 3), [dateSeed]);
+  
+  // Get game data based on date seed
+  const gameData = useMemo(() => {
+    const date = new Date(dateSeed);
+    return getGameData(date);
+  }, [dateSeed]);
 
-  // Filter to ensure no duplicate answers in the grid
-  const gridAnswers = useMemo(() => {
-    const usedAnswers = new Set<string>();
-    const filteredCombinations: Record<string, string> = {};
-    
-    // First pass: collect all possible combinations for this grid
-    const allCombinations = [];
-    for (const aff of affiliations) {
-      for (const attr of attributes) {
-        const key = `${aff}|${attr}`;
-        const answer = correctAnswers[key];
+  const { affiliations, roles, answers: gridAnswers, hints } = gameData;
+
+  // Convert grid answers to the expected format
+  const gridAnswersMap = useMemo(() => {
+    const answersMap: Record<string, string> = {};
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const key = `${affiliations[row]}|${roles[col]}`;
+        const answer = gridAnswers[row][col];
         if (answer) {
-          allCombinations.push({ key, answer });
+          answersMap[key] = answer;
         }
       }
     }
-    
-    // Second pass: select combinations with unique answers
-    for (const { key, answer } of allCombinations) {
-      if (!usedAnswers.has(answer)) {
-        filteredCombinations[key] = answer;
-        usedAnswers.add(answer);
-      }
-    }
-    
-    // If we don't have 9 unique answers, fill remaining slots with duplicates
-    // but prioritize unique answers first
-    let remainingSlots = 9 - Object.keys(filteredCombinations).length;
-    if (remainingSlots > 0) {
-      for (const { key, answer } of allCombinations) {
-        if (!filteredCombinations[key] && remainingSlots > 0) {
-          filteredCombinations[key] = answer;
-          remainingSlots--;
+    return answersMap;
+  }, [affiliations, roles, gridAnswers]);
+
+  // Convert hints to the expected format
+  const hintsMap = useMemo(() => {
+    const hintsMap: Record<string, string[]> = {};
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const key = `${affiliations[row]}|${roles[col]}`;
+        const cellHints = hints[row][col];
+        if (cellHints) {
+          hintsMap[key] = cellHints;
         }
       }
     }
-    
-    return filteredCombinations;
-  }, [affiliations, attributes]);
+    return hintsMap;
+  }, [affiliations, roles, hints]);
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<Record<string, "correct" | "incorrect" | "revealed" | undefined>>({});
@@ -401,17 +358,17 @@ export default function OnePieceGrid() {
 
   const handleInput = (
     aff: string,
-    attr: string,
+    role: string,
     value: string
   ) => {
-    const key = `${aff}|${attr}`;
+    const key = `${aff}|${role}`;
     setAnswers((prev) => ({ ...prev, [key]: value }));
     setFeedback((prev) => ({ ...prev, [key]: undefined }));
     
     // Generate suggestions based on input
     if (value.trim()) {
       const inputLower = value.toLowerCase();
-      const allCharacters = [...new Set(Object.values(correctAnswers))];
+      const allCharacters = onePieceCharacters.map(char => char.name);
       const matchingCharacters = allCharacters.filter(char => 
         char.toLowerCase().includes(inputLower)
       ).slice(0, 5); // Limit to 5 suggestions
@@ -424,17 +381,17 @@ export default function OnePieceGrid() {
     }
   };
 
-  const handleSuggestionClick = (aff: string, attr: string, suggestion: string) => {
-    const key = `${aff}|${attr}`;
+  const handleSuggestionClick = (aff: string, role: string, suggestion: string) => {
+    const key = `${aff}|${role}`;
     setAnswers((prev) => ({ ...prev, [key]: suggestion }));
     setShowSuggestions((prev) => ({ ...prev, [key]: false }));
     setFeedback((prev) => ({ ...prev, [key]: undefined }));
   };
 
-  const handleInputBlur = (aff: string, attr: string) => {
+  const handleInputBlur = (aff: string, role: string) => {
     // Delay hiding suggestions to allow for clicks
     setTimeout(() => {
-      const key = `${aff}|${attr}`;
+      const key = `${aff}|${role}`;
       setShowSuggestions((prev) => ({ ...prev, [key]: false }));
     }, 150);
   };
@@ -442,9 +399,9 @@ export default function OnePieceGrid() {
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
     aff: string,
-    attr: string
+    role: string
   ) => {
-    const key = `${aff}|${attr}`;
+    const key = `${aff}|${role}`;
     
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -478,11 +435,11 @@ export default function OnePieceGrid() {
         
         // Submit the selected suggestion
         if (feedback[key] === "correct" || (guesses[key] ?? 0) >= 3) return;
-        const isCorrect = gridAnswers[key]?.toLowerCase() === selectedSuggestion.toLowerCase();
+        const isCorrect = gridAnswersMap[key]?.toLowerCase() === selectedSuggestion.toLowerCase();
         if (isCorrect) {
           setFeedback((prev) => ({ ...prev, [key]: "correct" }));
           if (videosEnabled) {
-            const charName = gridAnswers[key];
+            const charName = gridAnswersMap[key];
             if (characterVideos[charName]) {
               setVideo(characterVideos[charName]);
               setVideoChar(charName);
@@ -505,11 +462,11 @@ export default function OnePieceGrid() {
       // Original logic for when no suggestions are available
       if (!answer) return;
       if (feedback[key] === "correct" || (guesses[key] ?? 0) >= 3) return;
-      const isCorrect = gridAnswers[key]?.toLowerCase() === answer.trim().toLowerCase();
+      const isCorrect = gridAnswersMap[key]?.toLowerCase() === answer.trim().toLowerCase();
       if (isCorrect) {
         setFeedback((prev) => ({ ...prev, [key]: "correct" }));
         if (videosEnabled) {
-          const charName = gridAnswers[key];
+          const charName = gridAnswersMap[key];
           if (characterVideos[charName]) {
             setVideo(characterVideos[charName]);
             setVideoChar(charName);
@@ -529,16 +486,16 @@ export default function OnePieceGrid() {
     }
   };
 
-  const handleHint = (aff: string, attr: string) => {
-    const key = `${aff}|${attr}`;
+  const handleHint = (aff: string, role: string) => {
+    const key = `${aff}|${role}`;
     setShowHint((prev) => ({ ...prev, [key]: true }));
     setHintsUsed((prev) => prev + 1);
     setPoints((prev) => prev - 5);
   };
 
-  const handleReveal = (aff: string, attr: string) => {
-    const key = `${aff}|${attr}`;
-    setAnswers((prev) => ({ ...prev, [key]: gridAnswers[key] || "" }));
+  const handleReveal = (aff: string, role: string) => {
+    const key = `${aff}|${role}`;
+    setAnswers((prev) => ({ ...prev, [key]: gridAnswersMap[key] || "" }));
     setFeedback((prev) => ({ ...prev, [key]: "revealed" }));
     setShowHint((prev) => ({ ...prev, [key]: false }));
   };
@@ -590,9 +547,9 @@ export default function OnePieceGrid() {
           {/* X axis header - sticky */}
           <div className="sticky top-0 z-10 grid grid-cols-4 gap-1 sm:gap-2 md:gap-4 mb-2">
             <div className="" />
-            {attributes.map((attr) => (
-              <div key={attr} className="text-xs sm:text-sm md:text-lg font-bold text-gray-900 dark:text-white text-center px-1 py-1 sm:py-2 rounded-xl bg-white/90 dark:bg-zinc-700/90 shadow-sm break-words leading-tight">
-                {attr}
+            {roles.map((role) => (
+              <div key={role} className="text-xs sm:text-sm md:text-lg font-bold text-gray-900 dark:text-white text-center px-1 py-1 sm:py-2 rounded-xl bg-white/90 dark:bg-zinc-700/90 shadow-sm break-words leading-tight">
+                {role}
               </div>
             ))}
           </div>
@@ -602,14 +559,14 @@ export default function OnePieceGrid() {
               <div className="text-xs sm:text-sm md:text-lg font-bold text-gray-900 dark:text-white text-left px-1 py-1 sm:py-2 rounded-xl bg-white/80 dark:bg-zinc-700/80 shadow-sm break-words leading-tight">
                 {aff}
               </div>
-              {attributes.map((attr) => {
-                const key = `${aff}|${attr}`;
+              {roles.map((role) => {
+                const key = `${aff}|${role}`;
                 const guessCount = guesses[key] ?? 0;
                 const isCorrect = feedback[key] === "correct";
                 const isLocked = isCorrect || guessCount >= 3;
                 return (
                   <div
-                    key={attr}
+                    key={role}
                     className="rounded-2xl bg-white/90 dark:bg-zinc-800/90 shadow-lg flex flex-col items-center justify-center p-2 sm:p-3 md:p-6 min-h-[100px] sm:min-h-[140px] md:min-h-[180px] transition-colors border border-white/60 dark:border-zinc-700/80 backdrop-blur-xl relative"
                   >
                     <div className="relative">
@@ -625,9 +582,9 @@ export default function OnePieceGrid() {
                             : "border-gray-300 dark:border-zinc-600"}
                         `}
                         value={answers[key] || ""}
-                        onChange={(e) => handleInput(aff, attr, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, aff, attr)}
-                        onBlur={() => handleInputBlur(aff, attr)}
+                        onChange={(e) => handleInput(aff, role, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(e, aff, role)}
+                        onBlur={() => handleInputBlur(aff, role)}
                         placeholder="?"
                         autoComplete="off"
                         disabled={isLocked}
@@ -643,7 +600,7 @@ export default function OnePieceGrid() {
                                   ? 'bg-blue-100 dark:bg-blue-800 text-blue-900 dark:text-blue-100'
                                   : 'text-gray-900 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900'
                               }`}
-                              onClick={() => handleSuggestionClick(aff, attr, suggestion)}
+                              onClick={() => handleSuggestionClick(aff, role, suggestion)}
                             >
                               {suggestion}
                             </button>
@@ -671,7 +628,7 @@ export default function OnePieceGrid() {
                       {guessCount > 0 && guessCount < 3 && !isCorrect && (
                         <button
                           className="px-1 sm:px-2 py-1 text-xs sm:text-sm rounded bg-blue-100/80 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 border border-blue-200/60 dark:border-blue-700/60 transition font-semibold shadow"
-                          onClick={() => handleHint(aff, attr)}
+                          onClick={() => handleHint(aff, role)}
                           disabled={showHint[key]}
                         >
                           Hint
@@ -681,15 +638,15 @@ export default function OnePieceGrid() {
                       {guessCount >= 3 && !isCorrect && feedback[key] !== "revealed" && (
                         <button
                           className="px-1 sm:px-2 py-1 text-xs sm:text-sm rounded bg-gray-200/80 dark:bg-zinc-800/60 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-zinc-700 border border-gray-300/60 dark:border-zinc-700/60 transition font-semibold shadow"
-                          onClick={() => handleReveal(aff, attr)}
+                          onClick={() => handleReveal(aff, role)}
                         >
                           Reveal
                         </button>
                       )}
                     </div>
                     {/* Show hint if requested */}
-                    {showHint[key] && hints[key] && (
-                      <div className="text-xs sm:text-sm mt-1 text-blue-700 dark:text-blue-300 italic font-semibold drop-shadow text-center px-1">{hints[key]}</div>
+                    {showHint[key] && hintsMap[key] && (
+                      <div className="text-xs sm:text-sm mt-1 text-blue-700 dark:text-blue-300 italic font-semibold drop-shadow text-center px-1">{hintsMap[key][0]}</div>
                     )}
                   </div>
                 );
@@ -715,3 +672,4 @@ export default function OnePieceGrid() {
     </div>
   );
 }
+
