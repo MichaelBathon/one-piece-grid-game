@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useMemo, useContext, useEffect } from "react";
 import { DateSeedContext } from "./theme-provider";
-import { getGameData, onePieceCharacters } from "./game-data";
+import { getSimpleGridGameData, onePieceCharacters } from "./game-data";
 
 // Deterministic shuffle using a seed (date string)
 function seededShuffle<T>(array: T[], seed: string): T[] {
@@ -233,97 +233,86 @@ const hints: { [key: string]: string } = {
 
 // Map character names to YouTube video IDs (example mapping, update as needed)
 const characterVideos: { [key: string]: string } = {
-  Luffy: "uPIsoC4xIhc",
-  Zoro: "lGQ6LCC32Xw",
-  Nami: "9fPvAzR_azo",
-  Usopp: "_-CTSdyboUM",
-  Sanji: "I6eHaRQO2DY",
-  Vivi: "RCOGMd9fMzI",
-  Chopper: "eFOhvFdTC5o",
-  Robin: "xJniMpp-l7k",
-  Franky: "v5ZQK_7WJC8",
-  Brook: "hAvzPHgVB6Y",
-  Jinbe: "wg65MSYqbIA",
-  Smoker: "2Vv-BfVoq4g",
-  Tashigi: "RgKAFK5djSk",
-  Kizaru: "OPf0YbXqDm0",
-  Crocodile: "YQHsXMglC9A",
-  Mihawk: "CevxZvSJLk8",
-  Law: "09R8_2nJtjg",
-  Shanks: "kXYiU_JCYtU",
-  BigMom: "ktvTqknDobU",
-  Blackbeard: "60ItHLz5WEA",
-  Dragon: "hLQl3WQQoQ0",
-  Sabo: "pRpeEdMmmQ0",
-  Ivankov: "uelHwf8o7_U",
-  Doflamingo: "YqeW9_5kURI",
-  CaesarClown: "YykjpeuMNEk",
-  Bartolomeo: "09R8_2nJtjg",
-  "Trafalgar Law": "09R8_2nJtjg",
-  "Van Augur": "kJQP7kiw5Fk",
-  "Kin'emon": "RgKAFK5djSk",
-  Carrot: "Zi_XLOBDo_Y",
-  Pedro: "hT_nvWreIhg",
-  Sai: "CevxZvSJLk8",
-  "Charlotte Smoothie": "ktvTqknDobU",
-  "Fullbody": "YQHsXMglC9A",
-  "Belo Betty": "pRpeEdMmmQ0",
-  "Koala": "uelHwf8o7_U",
-  "Buggy": "YqeW9_5kURI",
-  "Shiryu": "YykjpeuMNEk",
-  "Alvida": "YQHsXMglC9A",
-  "Hina": "RgKAFK5djSk",
-  "Brannew": "hT_nvWreIhg",
+  "Monkey D. Luffy": "uPIsoC4xIhc",
+  "Roronoa Zoro": "lGQ6LCC32Xw",
+  "Nami": "9fPvAzR_azo",
+  "Usopp": "_-CTSdyboUM",
+  "Sanji": "I6eHaRQO2DY",
+  "Tony Tony Chopper": "eFOhvFdTC5o",
+  "Nico Robin": "xJniMpp-l7k",
+  "Franky": "v5ZQK_7WJC8",
+  "Brook": "hAvzPHgVB6Y",
+  "Jinbe": "wg65MSYqbIA",
+  "Trafalgar D. Water Law": "09R8_2nJtjg",
+  "Bepo": "v5ZQK_7WJC8",
+  "Shachi": "v5ZQK_7WJC8",
+  "Penguin": "v5ZQK_7WJC8",
+  "Jean Bart": "v5ZQK_7WJC8",
+  "Eustass Kid": "ktvTqknDobU",
+  "Killer": "ktvTqknDobU",
+  "Scratchmen Apoo": "ktvTqknDobU",
+  "Basil Hawkins": "ktvTqknDobU",
+  "X Drake": "ktvTqknDobU",
+  "Capone Bege": "ktvTqknDobU",
+  "Jewelry Bonney": "ktvTqknDobU",
+  "Urouge": "ktvTqknDobU",
+  "Marshall D. Teach": "60ItHLz5WEA",
+  "Jesus Burgess": "60ItHLz5WEA",
+  "Van Augur": "60ItHLz5WEA",
+  "Doc Q": "60ItHLz5WEA",
+  // fallback for minor/crew
+  "Vito": "ktvTqknDobU",
+  "Gotti": "ktvTqknDobU",
+  "Ikkaku": "ktvTqknDobU",
+  "Clione": "ktvTqknDobU",
+  "Uni": "ktvTqknDobU",
+  "Cotton": "ktvTqknDobU"
 };
 
 export default function OnePieceGrid() {
   const { dateSeed } = useContext(DateSeedContext);
-  
-  // Get game data based on date seed
+  type Cell = ReturnType<typeof getSimpleGridGameData>["cells"][number];
+
+  const [hardMode, setHardMode] = useState(false);
+  const [videosEnabled, setVideosEnabled] = useState<boolean>(true);
+  const [video, setVideo] = useState<string | null>(null);
+  const [videoChar, setVideoChar] = useState<string | null>(null);
+  const [videoCell, setVideoCell] = useState<Cell | null>(null);
+  // Track how many hints have been revealed per cell
+  const [revealedHints, setRevealedHints] = useState<Record<string, number>>({});
+
+  // Get simple grid game data based on date seed and hardMode
   const gameData = useMemo(() => {
     const date = new Date(dateSeed);
-    return getGameData(date);
-  }, [dateSeed]);
+    return getSimpleGridGameData(date, hardMode);
+  }, [dateSeed, hardMode]);
 
-  const { affiliations, roles, answers: gridAnswers, hints } = gameData;
+  const { cells } = gameData;
 
-  // Convert grid answers to the expected format
+  // Build a unique key for each cell
+  const getCellKey = (cell: Cell) => `${cell.attr1}|${cell.value1}|${cell.attr2}|${cell.value2}`;
+
+  // Map of answers for each cell
   const gridAnswersMap = useMemo(() => {
-    const answersMap: Record<string, string> = {};
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 3; col++) {
-        const key = `${affiliations[row]}|${roles[col]}`;
-        const answer = gridAnswers[row][col];
-        if (answer) {
-          answersMap[key] = answer;
-        }
-      }
-    }
-    return answersMap;
-  }, [affiliations, roles, gridAnswers]);
+    const map: Record<string, string> = {};
+    cells.forEach(cell => {
+      map[getCellKey(cell)] = cell.answer;
+    });
+    return map;
+  }, [cells]);
 
-  // Convert hints to the expected format
+  // Map of hints for each cell
   const hintsMap = useMemo(() => {
-    const hintsMap: Record<string, string[]> = {};
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 3; col++) {
-        const key = `${affiliations[row]}|${roles[col]}`;
-        const cellHints = hints[row][col];
-        if (cellHints) {
-          hintsMap[key] = cellHints;
-        }
-      }
-    }
-    return hintsMap;
-  }, [affiliations, roles, hints]);
+    const map: Record<string, string[]> = {};
+    cells.forEach(cell => {
+      map[getCellKey(cell)] = cell.hints;
+    });
+    return map;
+  }, [cells]);
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<Record<string, "correct" | "incorrect" | "revealed" | undefined>>({});
   const [showHint, setShowHint] = useState<Record<string, boolean>>({});
-  const [videoCell, setVideoCell] = useState<string | null>(null);
-  const [video, setVideo] = useState<string | null>(null);
-  const [videoChar, setVideoChar] = useState<string | null>(null);
-  const [videosEnabled, setVideosEnabled] = useState<boolean>(true);
   const [guesses, setGuesses] = useState<Record<string, number>>({});
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
   const [showSuggestions, setShowSuggestions] = useState<Record<string, boolean>>({});
@@ -332,6 +321,7 @@ export default function OnePieceGrid() {
   const [wrongAnswers, setWrongAnswers] = useState<number>(0);
   const [hintsUsed, setHintsUsed] = useState<number>(0);
   const [gameComplete, setGameComplete] = useState<boolean>(false);
+
 
   useEffect(() => {
     setAnswers({});
@@ -342,67 +332,61 @@ export default function OnePieceGrid() {
     setWrongAnswers(0);
     setHintsUsed(0);
     setGameComplete(false);
-  }, [dateSeed]);
+    setVideo(null);
+    setVideoChar(null);
+    setVideoCell(null);
+    setRevealedHints({});
+  }, [dateSeed, hardMode]);
 
-  // Check if game is complete
   useEffect(() => {
     const totalCells = 9;
-    const completedCells = Object.keys(feedback).filter(key => 
+    const completedCells = Object.keys(feedback).filter(key =>
       feedback[key] === "correct" || feedback[key] === "revealed" || (guesses[key] ?? 0) >= 3
     ).length;
-    
     if (completedCells === totalCells) {
       setGameComplete(true);
     }
   }, [feedback, guesses]);
 
-  const handleInput = (
-    aff: string,
-    role: string,
-    value: string
-  ) => {
-    const key = `${aff}|${role}`;
+  const handleInput = (cell: Cell, value: string) => {
+    const key = getCellKey(cell);
     setAnswers((prev) => ({ ...prev, [key]: value }));
     setFeedback((prev) => ({ ...prev, [key]: undefined }));
-    
-    // Generate suggestions based on input
+    // Suggestions
     if (value.trim()) {
       const inputLower = value.toLowerCase();
       const allCharacters = onePieceCharacters.map(char => char.name);
-      const matchingCharacters = allCharacters.filter(char => 
+      const matchingCharacters = allCharacters.filter(char =>
         char.toLowerCase().includes(inputLower)
-      ).slice(0, 5); // Limit to 5 suggestions
+      ).slice(0, 5);
       setSuggestions((prev) => ({ ...prev, [key]: matchingCharacters }));
       setShowSuggestions((prev) => ({ ...prev, [key]: true }));
-      setSelectedSuggestionIndex((prev) => ({ ...prev, [key]: 0 })); // Reset selection
+      setSelectedSuggestionIndex((prev) => ({ ...prev, [key]: 0 }));
     } else {
       setShowSuggestions((prev) => ({ ...prev, [key]: false }));
       setSelectedSuggestionIndex((prev) => ({ ...prev, [key]: 0 }));
     }
   };
 
-  const handleSuggestionClick = (aff: string, role: string, suggestion: string) => {
-    const key = `${aff}|${role}`;
+  const handleSuggestionClick = (cell: Cell, suggestion: string) => {
+    const key = getCellKey(cell);
     setAnswers((prev) => ({ ...prev, [key]: suggestion }));
     setShowSuggestions((prev) => ({ ...prev, [key]: false }));
     setFeedback((prev) => ({ ...prev, [key]: undefined }));
   };
 
-  const handleInputBlur = (aff: string, role: string) => {
-    // Delay hiding suggestions to allow for clicks
+  const handleInputBlur = (cell: Cell) => {
     setTimeout(() => {
-      const key = `${aff}|${role}`;
+      const key = getCellKey(cell);
       setShowSuggestions((prev) => ({ ...prev, [key]: false }));
     }, 150);
   };
 
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
-    aff: string,
-    role: string
+    cell: Cell
   ) => {
-    const key = `${aff}|${role}`;
-    
+    const key = getCellKey(cell);
     if (e.key === "ArrowDown") {
       e.preventDefault();
       if (showSuggestions[key] && suggestions[key] && suggestions[key].length > 0) {
@@ -412,7 +396,6 @@ export default function OnePieceGrid() {
       }
       return;
     }
-    
     if (e.key === "ArrowUp") {
       e.preventDefault();
       if (showSuggestions[key] && suggestions[key] && suggestions[key].length > 0) {
@@ -422,33 +405,21 @@ export default function OnePieceGrid() {
       }
       return;
     }
-    
     if (e.key === "Enter") {
       const answer = answers[key] || "";
-      
-      // If there are suggestions and user presses Enter, use the selected suggestion
       if (showSuggestions[key] && suggestions[key] && suggestions[key].length > 0) {
         const selectedIndex = selectedSuggestionIndex[key] || 0;
         const selectedSuggestion = suggestions[key][selectedIndex];
         setAnswers((prev) => ({ ...prev, [key]: selectedSuggestion }));
         setShowSuggestions((prev) => ({ ...prev, [key]: false }));
-        
-        // Submit the selected suggestion
         if (feedback[key] === "correct" || (guesses[key] ?? 0) >= 3) return;
         const isCorrect = gridAnswersMap[key]?.toLowerCase() === selectedSuggestion.toLowerCase();
         if (isCorrect) {
           setFeedback((prev) => ({ ...prev, [key]: "correct" }));
-          if (videosEnabled) {
-            const charName = gridAnswersMap[key];
-            if (characterVideos[charName]) {
-              setVideo(characterVideos[charName]);
-              setVideoChar(charName);
-              setVideoCell(key);
-            } else {
-              setVideo(null);
-              setVideoChar(null);
-              setVideoCell(null);
-            }
+          if (videosEnabled && characterVideos[cell.answer]) {
+            setVideo(characterVideos[cell.answer]);
+            setVideoChar(cell.answer);
+            setVideoCell(cell);
           }
         } else {
           setFeedback((prev) => ({ ...prev, [key]: "incorrect" }));
@@ -458,24 +429,15 @@ export default function OnePieceGrid() {
         }
         return;
       }
-      
-      // Original logic for when no suggestions are available
       if (!answer) return;
       if (feedback[key] === "correct" || (guesses[key] ?? 0) >= 3) return;
       const isCorrect = gridAnswersMap[key]?.toLowerCase() === answer.trim().toLowerCase();
       if (isCorrect) {
         setFeedback((prev) => ({ ...prev, [key]: "correct" }));
-        if (videosEnabled) {
-          const charName = gridAnswersMap[key];
-          if (characterVideos[charName]) {
-            setVideo(characterVideos[charName]);
-            setVideoChar(charName);
-            setVideoCell(key);
-          } else {
-            setVideo(null);
-            setVideoChar(null);
-            setVideoCell(null);
-          }
+        if (videosEnabled && characterVideos[cell.answer]) {
+          setVideo(characterVideos[cell.answer]);
+          setVideoChar(cell.answer);
+          setVideoCell(cell);
         }
       } else {
         setFeedback((prev) => ({ ...prev, [key]: "incorrect" }));
@@ -486,29 +448,45 @@ export default function OnePieceGrid() {
     }
   };
 
-  const handleHint = (aff: string, role: string) => {
-    const key = `${aff}|${role}`;
+  const handleHint = (cell: Cell) => {
+    const key = getCellKey(cell);
     setShowHint((prev) => ({ ...prev, [key]: true }));
     setHintsUsed((prev) => prev + 1);
     setPoints((prev) => prev - 5);
+    setRevealedHints((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
   };
 
-  const handleReveal = (aff: string, role: string) => {
-    const key = `${aff}|${role}`;
+  const handleReveal = (cell: Cell) => {
+    const key = getCellKey(cell);
     setAnswers((prev) => ({ ...prev, [key]: gridAnswersMap[key] || "" }));
     setFeedback((prev) => ({ ...prev, [key]: "revealed" }));
     setShowHint((prev) => ({ ...prev, [key]: false }));
   };
 
+  const getHintsToShow = (key: string) => {
+    const guessCount = guesses[key] ?? 0;
+    const cellHints = hintsMap[key] || [];
+    if (feedback[key] === "correct" || feedback[key] === "revealed") {
+      // Only show the number of hints that were revealed before the correct answer
+      return revealedHints[key] ?? 0;
+    }
+    return Math.min(guessCount, cellHints.length);
+  };
+
+  // Render 3x3 grid
   return (
-    <div className="relative min-h-[80vh] flex flex-col items-center justify-center py-8 px-2 sm:px-4 md:px-8">
-      {/* Glass card */}
-      <div className="w-full max-w-5xl rounded-3xl bg-white/5 dark:bg-zinc-900/10 shadow-2xl border border-white/10 dark:border-zinc-800/20 p-2 sm:p-4 md:p-8 mx-auto relative overflow-hidden">
-        {/* Scrollable grid container */}
-        <div className="max-h-[80vh] overflow-y-auto">
-        {/* User settings toggle */}
-        <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-          <label htmlFor="toggle-videos" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 select-none cursor-pointer">Videos</label>
+    <div className="relative min-h-[80vh] flex flex-col items-center justify-center py-4 sm:py-8 px-2 sm:px-4 md:px-8">
+      <div className="w-full max-w-4xl lg:max-w-5xl rounded-3xl bg-white/80 dark:bg-slate-900/80 shadow-2xl border border-white/20 dark:border-slate-800/20 p-3 sm:p-4 md:p-8 mx-auto relative overflow-hidden backdrop-blur-xl">
+        <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex items-center gap-2 sm:gap-4 z-10">
+          <label htmlFor="toggle-hardmode" className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 select-none cursor-pointer">Hard Mode</label>
+          <input
+            id="toggle-hardmode"
+            type="checkbox"
+            checked={hardMode}
+            onChange={() => setHardMode((v) => !v)}
+            className="accent-red-500 w-4 h-4 rounded focus:ring-2 focus:ring-red-400"
+          />
+          <label htmlFor="toggle-videos" className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 select-none cursor-pointer">Videos</label>
           <input
             id="toggle-videos"
             type="checkbox"
@@ -517,90 +495,59 @@ export default function OnePieceGrid() {
             className="accent-blue-500 w-4 h-4 rounded focus:ring-2 focus:ring-blue-400"
           />
         </div>
-        {/* Video modal overlay (centered in grid card) */}
-        {videosEnabled && video && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 rounded-3xl">
-            <div className="relative flex flex-col items-center w-full">
-              <button
-                className="absolute -top-8 right-0 text-2xl text-white hover:text-red-400 z-10 bg-black/60 rounded-full px-3 py-1"
-                onClick={() => { setVideo(null); setVideoChar(null); setVideoCell(null); }}
-              >
-                ✕
-              </button>
-              <div className="w-[90vw] max-w-[640px] aspect-video flex items-center justify-center">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={`https://www.youtube.com/embed/${video}?autoplay=1&rel=0`}
-                  title={videoChar || "Character Video"}
-                  frameBorder="0"
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
-                  className="rounded-2xl shadow-2xl w-full h-full"
-                  style={{ minHeight: '180px', maxHeight: '360px' }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-        <div className="flex flex-col gap-2 sm:gap-4">
-          {/* X axis header - sticky */}
-          <div className="sticky top-0 z-10 grid grid-cols-4 gap-1 sm:gap-2 md:gap-4 mb-2">
-            <div className="" />
-            {roles.map((role) => (
-              <div key={role} className="text-xs sm:text-sm md:text-lg font-bold text-gray-900 dark:text-white text-center px-1 py-1 sm:py-2 rounded-xl bg-white/90 dark:bg-zinc-700/90 shadow-sm break-words leading-tight">
-                {role}
-              </div>
-            ))}
-          </div>
-          {/* Grid rows */}
-          {affiliations.map((aff) => (
-            <div key={aff} className="grid grid-cols-4 gap-1 sm:gap-2 md:gap-4 items-center">
-              <div className="text-xs sm:text-sm md:text-lg font-bold text-gray-900 dark:text-white text-left px-1 py-1 sm:py-2 rounded-xl bg-white/80 dark:bg-zinc-700/80 shadow-sm break-words leading-tight">
-                {aff}
-              </div>
-              {roles.map((role) => {
-                const key = `${aff}|${role}`;
+        <div className="max-h-[70vh] sm:max-h-[80vh] overflow-y-auto">
+          <div className="flex flex-col gap-2 sm:gap-4">
+            {/* 3x3 grid */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+              {cells.map((cell: Cell, idx: number) => {
+                const key = getCellKey(cell);
                 const guessCount = guesses[key] ?? 0;
                 const isCorrect = feedback[key] === "correct";
                 const isLocked = isCorrect || guessCount >= 3;
                 return (
                   <div
-                    key={role}
-                    className="rounded-2xl bg-white/90 dark:bg-zinc-800/90 shadow-lg flex flex-col items-center justify-center p-2 sm:p-3 md:p-6 min-h-[100px] sm:min-h-[140px] md:min-h-[180px] transition-colors border border-white/60 dark:border-zinc-700/80 backdrop-blur-xl relative"
+                    key={key}
+                    className="rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-lg flex flex-col items-center justify-center p-2 sm:p-3 md:p-4 lg:p-6 min-h-[100px] sm:min-h-[120px] md:min-h-[140px] lg:min-h-[160px] transition-all duration-200 border border-white/60 dark:border-slate-700/80 backdrop-blur-xl relative hover:shadow-xl hover:scale-[1.02]"
                   >
-                    <div className="relative">
+                    <div className="flex flex-col items-center mb-2">
+                      <div className="flex items-center gap-1 text-sm sm:text-base md:text-lg lg:text-xl font-bold text-slate-900 dark:text-white text-center px-1 py-0.5 rounded bg-white/80 dark:bg-slate-700/80 shadow-sm mb-1">
+                        <span className="truncate max-w-[60px] sm:max-w-[80px] md:max-w-[100px] lg:max-w-[120px]">{cell.value1}</span>
+                        <span className="mx-1 text-slate-400 dark:text-slate-500 font-black">+</span>
+                        <span className="truncate max-w-[60px] sm:max-w-[80px] md:max-w-[100px] lg:max-w-[120px]">{cell.value2}</span>
+                      </div>
+                    </div>
+                    <div className="relative w-full">
                       <input
                         type="text"
-                        className={`w-full max-w-[90px] sm:max-w-[120px] md:max-w-[160px] px-2 sm:px-3 py-2 sm:py-3 md:py-4 rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-400 text-center text-sm sm:text-base md:text-xl font-semibold text-gray-900 dark:text-white bg-white dark:bg-zinc-700 placeholder-gray-500 dark:placeholder-gray-400 transition-colors
+                        className={`w-full max-w-[80px] sm:max-w-[100px] md:max-w-[120px] lg:max-w-[140px] px-2 sm:px-3 py-2 sm:py-3 md:py-4 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-400 text-center text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-slate-900 dark:text-white bg-white dark:bg-slate-700 placeholder-slate-500 dark:placeholder-slate-400 transition-all duration-200
                           ${feedback[key] === "correct"
-                            ? "border-green-500 ring-2 ring-green-400"
+                            ? "border-green-500 ring-2 ring-green-400 bg-green-50 dark:bg-green-900/20"
                             : feedback[key] === "incorrect"
-                            ? "border-red-400 ring-2 ring-red-300"
+                            ? "border-red-400 ring-2 ring-red-300 bg-red-50 dark:bg-red-900/20"
                             : feedback[key] === "revealed"
-                            ? "border-red-500 ring-2 ring-red-400"
-                            : "border-gray-300 dark:border-zinc-600"}
+                            ? "border-red-500 ring-2 ring-red-400 bg-red-50 dark:bg-red-900/20"
+                            : "border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500"}
                         `}
                         value={answers[key] || ""}
-                        onChange={(e) => handleInput(aff, role, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, aff, role)}
-                        onBlur={() => handleInputBlur(aff, role)}
+                        onChange={(e) => handleInput(cell, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(e, cell)}
+                        onBlur={() => handleInputBlur(cell)}
                         placeholder="?"
                         autoComplete="off"
                         disabled={isLocked}
                       />
                       {/* Suggestions dropdown */}
                       {showSuggestions[key] && suggestions[key] && suggestions[key].length > 0 && (
-                        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 max-h-32 overflow-y-auto">
+                        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 max-h-32 overflow-y-auto">
                           {suggestions[key].map((suggestion, index) => (
                             <button
                               key={index}
-                              className={`w-full px-2 py-1 text-left text-sm transition cursor-pointer ${
+                              className={`w-full px-2 py-1 text-left text-sm transition-colors cursor-pointer ${
                                 index === (selectedSuggestionIndex[key] || 0)
                                   ? 'bg-blue-100 dark:bg-blue-800 text-blue-900 dark:text-blue-100'
-                                  : 'text-gray-900 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900'
+                                  : 'text-slate-900 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900'
                               }`}
-                              onClick={() => handleSuggestionClick(aff, role, suggestion)}
+                              onClick={() => handleSuggestionClick(cell, suggestion)}
                             >
                               {suggestion}
                             </button>
@@ -611,7 +558,7 @@ export default function OnePieceGrid() {
                     {/* Guess indicators */}
                     <div className="flex gap-1 mt-1 sm:mt-2 mb-1">
                       {[0,1,2].map(i => (
-                        <div key={i} className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full border border-gray-400 dark:border-gray-600 ${guessCount > i ? 'bg-red-500' : 'bg-gray-200 dark:bg-zinc-800'}`}></div>
+                        <div key={i} className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full border border-slate-400 dark:border-slate-600 ${guessCount > i ? 'bg-red-500' : 'bg-slate-200 dark:bg-slate-800'}`}></div>
                       ))}
                     </div>
                     {feedback[key] === "correct" && (
@@ -627,8 +574,8 @@ export default function OnePieceGrid() {
                       {/* Show Hint button only after 1st incorrect guess, before 3rd */}
                       {guessCount > 0 && guessCount < 3 && !isCorrect && (
                         <button
-                          className="px-1 sm:px-2 py-1 text-xs sm:text-sm rounded bg-blue-100/80 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 border border-blue-200/60 dark:border-blue-700/60 transition font-semibold shadow"
-                          onClick={() => handleHint(aff, role)}
+                          className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-lg bg-blue-100/80 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 border border-blue-200/60 dark:border-blue-700/60 transition-colors font-semibold shadow-sm"
+                          onClick={() => handleHint(cell)}
                           disabled={showHint[key]}
                         >
                           Hint
@@ -637,35 +584,61 @@ export default function OnePieceGrid() {
                       {/* Show Reveal button only after 3rd incorrect guess and not correct */}
                       {guessCount >= 3 && !isCorrect && feedback[key] !== "revealed" && (
                         <button
-                          className="px-1 sm:px-2 py-1 text-xs sm:text-sm rounded bg-gray-200/80 dark:bg-zinc-800/60 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-zinc-700 border border-gray-300/60 dark:border-zinc-700/60 transition font-semibold shadow"
-                          onClick={() => handleReveal(aff, role)}
+                          className="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-lg bg-slate-200/80 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 border border-slate-300/60 dark:border-slate-700/60 transition-colors font-semibold shadow-sm"
+                          onClick={() => handleReveal(cell)}
                         >
                           Reveal
                         </button>
                       )}
                     </div>
                     {/* Show hint if requested */}
-                    {showHint[key] && hintsMap[key] && (
-                      <div className="text-xs sm:text-sm mt-1 text-blue-700 dark:text-blue-300 italic font-semibold drop-shadow text-center px-1">{hintsMap[key][0]}</div>
+                    {(showHint[key] || (feedback[key] === "correct" && getHintsToShow(key) > 0)) && hintsMap[key] && getHintsToShow(key) > 0 && (
+                      <div className="flex flex-col gap-1 mt-1">
+                        {hintsMap[key].slice(0, getHintsToShow(key)).map((hint, idx) => (
+                          <div key={idx} className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 italic font-semibold drop-shadow text-center px-1">{hint}</div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 );
               })}
             </div>
-          ))}
-        </div>
+          </div>
         </div>
       </div>
-      
       {/* Score display - below grid and centered */}
       {gameComplete && (
-        <div className="mt-8 bg-white/90 dark:bg-zinc-900/90 rounded-2xl shadow-lg border border-white/40 dark:border-zinc-800/60 p-6 text-center max-w-md">
-          <div className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">Game Complete!</div>
-          <div className="text-lg text-gray-700 dark:text-gray-300">
+        <div className="mt-6 sm:mt-8 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-lg border border-white/40 dark:border-slate-800/60 p-4 sm:p-6 text-center max-w-md mx-auto">
+          <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">Game Complete!</div>
+          <div className="text-base sm:text-lg text-slate-700 dark:text-slate-300">
             Final Score: <span className="font-bold text-slate-600 dark:text-slate-400">{points}</span>
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
             Wrong Answers: {wrongAnswers} | Hints Used: {hintsUsed}
+          </div>
+        </div>
+      )}
+      {videosEnabled && video && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative flex flex-col items-center w-full max-w-4xl">
+            <button
+              className="absolute -top-12 right-0 text-2xl text-white hover:text-red-400 z-10 bg-black/60 rounded-full px-3 py-1 transition-colors"
+              onClick={() => { setVideo(null); setVideoChar(null); setVideoCell(null); }}
+            >
+              ✕
+            </button>
+            <div className="w-full aspect-video flex items-center justify-center">
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${video}?autoplay=1&rel=0`}
+                title={videoChar || "Character Video"}
+                frameBorder="0"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                className="rounded-2xl shadow-2xl w-full h-full"
+              />
+            </div>
           </div>
         </div>
       )}

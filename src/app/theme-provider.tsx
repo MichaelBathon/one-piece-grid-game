@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import { FaThLarge, FaTrophy, FaQuestionCircle, FaSignInAlt, FaCalendarAlt, FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { FaThLarge, FaTrophy, FaQuestionCircle, FaSignInAlt, FaCalendarAlt, FaSignOutAlt, FaUser, FaBars, FaTimes } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 import { useSession, signOut } from "next-auth/react";
 
@@ -18,7 +18,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>("system");
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>("light");
   const [dateSeed, setDateSeed] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start closed on mobile
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +68,22 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     console.log('Current html classes:', html.classList.toString());
   }, [theme, resolvedTheme]);
 
+  // Auto-open sidebar on desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(true);
+        setSidebarCollapsed(false);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   let icon = '☀️';
   let label = 'Light';
   if (theme === 'dark') {
@@ -98,49 +114,69 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
 
   return (
     <DateSeedContext.Provider value={{ dateSeed, setDateSeed }}>
-      <div className="min-h-screen bg-transparent flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex flex-col">
         {/* Header: full width at top */}
-        <header className="sticky top-0 z-30 w-full flex items-center justify-between px-2 sm:px-6 py-2 bg-gradient-to-r from-slate-500 via-slate-400 to-slate-300 dark:from-slate-700 dark:via-slate-600 dark:to-slate-500 shadow-lg transition-all duration-300">
+        <header className="sticky top-0 z-30 w-full flex items-center justify-between px-3 sm:px-6 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-lg border-b border-slate-200/50 dark:border-slate-700/50">
+          {/* Left side - Mobile menu + Logo */}
+          <div className="flex items-center gap-3">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {sidebarOpen ? <FaTimes className="w-5 h-5" /> : <FaBars className="w-5 h-5" />}
+            </button>
+            
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <img src="/window.svg" alt="Logo" className="h-8 w-8" />
+              <span className="text-lg font-bold text-slate-800 dark:text-slate-200 hidden sm:block">One Piece Grid</span>
+            </div>
+          </div>
+
+          {/* Center - Date and controls */}
           <div className="flex items-center gap-2 sm:gap-4">
-            <div className="text-lg sm:text-xl font-semibold text-white drop-shadow">Daily Game: <span className="font-mono text-slate-200">{dateSeed}</span></div>
+            <div className="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300">
+              <span className="hidden sm:inline">Daily Game: </span>
+              <span className="font-mono text-slate-600 dark:text-slate-400">{dateSeed}</span>
+            </div>
             <button
               onClick={handleRandomize}
-              className="px-2 sm:px-3 py-1 rounded-lg bg-slate-700 text-white hover:bg-slate-800 border border-slate-600 text-xs font-semibold transition shadow"
+              className="px-2 sm:px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 text-xs font-semibold transition-colors shadow-sm"
             >
-              Randomize
+              <span className="hidden sm:inline">Randomize</span>
+              <span className="sm:hidden">🎲</span>
             </button>
             <button
               ref={pastGamesBtnRef}
               onClick={handlePastGames}
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 rounded-lg bg-slate-700 text-white hover:bg-slate-800 border border-slate-600 text-xs font-semibold transition shadow relative"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-lg bg-slate-600 text-white hover:bg-slate-700 border border-slate-500 text-xs font-semibold transition-colors shadow-sm relative"
             >
-              <FaCalendarAlt className="text-sm sm:text-base" />
+              <FaCalendarAlt className="text-xs sm:text-sm" />
               <span className="hidden sm:inline">Past Games</span>
             </button>
+            
             {/* Date Picker Popover */}
             {showDatePicker && (
-              <div
-                className="absolute z-50 mt-2 left-0"
-                style={{
-                  top: pastGamesBtnRef.current?.offsetTop ? (pastGamesBtnRef.current.offsetTop + pastGamesBtnRef.current.offsetHeight + 8) : undefined,
-                  left: pastGamesBtnRef.current?.offsetLeft ? pastGamesBtnRef.current.offsetLeft : undefined,
-                }}
-              >
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col items-center gap-4 w-64 sm:w-80 border border-slate-200 dark:border-slate-700">
-                  <div className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2"><FaCalendarAlt />Select a date</div>
+              <div className="absolute z-50 mt-2 left-0 right-0 sm:left-auto sm:right-0 sm:w-80">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col items-center gap-4 border border-slate-200 dark:border-slate-700 mx-2 sm:mx-0">
+                  <div className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2">
+                    <FaCalendarAlt />Select a date
+                  </div>
                   <input
                     ref={dateInputRef}
                     type="date"
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     max={new Date().toISOString().slice(0, 10)}
                   />
-                  <div className="flex gap-2 mt-2">
+                  <div className="flex gap-2 mt-2 w-full">
                     <button
-                      className="px-3 sm:px-4 py-2 rounded-lg bg-slate-600 text-white font-semibold hover:bg-slate-700 transition text-sm"
+                      className="flex-1 px-3 sm:px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors text-sm"
                       onClick={handleDatePick}
                     >Select</button>
                     <button
-                      className="px-3 sm:px-4 py-2 rounded-lg bg-gray-200 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-zinc-700 transition text-sm"
+                      className="flex-1 px-3 sm:px-4 py-2 rounded-lg bg-gray-200 dark:bg-slate-800 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-slate-700 transition-colors text-sm"
                       onClick={() => setShowDatePicker(false)}
                     >Cancel</button>
                   </div>
@@ -148,6 +184,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
               </div>
             )}
           </div>
+
+          {/* Right side - Theme + Auth */}
           <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => {
@@ -156,7 +194,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                 console.log('Setting new theme to:', newTheme);
                 setTheme(newTheme);
               }}
-              className="rounded-full p-1.5 sm:p-2 bg-slate-600 text-white hover:bg-slate-700 transition shadow"
+              className="rounded-full p-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm"
               aria-label="Toggle theme"
               type="button"
             >
@@ -164,7 +202,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
             </button>
             
             {status === "loading" ? (
-              <div className="text-white font-medium drop-shadow text-sm sm:text-base hidden sm:inline">
+              <div className="text-slate-700 dark:text-slate-300 font-medium text-sm sm:text-base hidden sm:inline">
                 Loading...
               </div>
             ) : session ? (
@@ -173,15 +211,15 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                   <img
                     src={session.user.image}
                     alt={session.user.name || "User"}
-                    className="w-8 h-8 rounded-full border-2 border-white"
+                    className="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-600"
                   />
                 )}
-                <span className="text-white font-medium drop-shadow text-sm sm:text-base hidden sm:inline">
+                <span className="text-slate-700 dark:text-slate-300 font-medium text-sm sm:text-base hidden sm:inline">
                   Welcome, {session.user?.name || "User"}!
                 </span>
                 <button
                   onClick={() => signOut()}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 border border-red-500 text-xs font-semibold transition shadow"
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 border border-red-500 text-xs font-semibold transition-colors shadow-sm"
                 >
                   <FaSignOutAlt className="text-xs" />
                   <span className="hidden sm:inline">Sign Out</span>
@@ -189,12 +227,12 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-white font-medium drop-shadow text-sm sm:text-base hidden sm:inline">
+                <span className="text-slate-700 dark:text-slate-300 font-medium text-sm sm:text-base hidden sm:inline">
                   Welcome, Guest!
                 </span>
                 <a
                   href="/auth/signin"
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 text-xs font-semibold transition shadow"
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 text-xs font-semibold transition-colors shadow-sm"
                 >
                   <FaSignInAlt className="text-xs" />
                   <span className="hidden sm:inline">Sign In</span>
@@ -204,65 +242,75 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
           </div>
         </header>
         
-        {/* Sidebar: below header */}
+        {/* Mobile overlay for sidebar */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Sidebar: responsive design */}
         <aside
-          className={`fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 flex flex-col items-center transition-all duration-300
-            bg-gradient-to-b from-slate-500 via-slate-400 to-slate-300 dark:from-slate-700 dark:via-slate-600 dark:to-slate-500 shadow-2xl
-            ${sidebarOpen ? (sidebarCollapsed ? 'w-16' : 'w-64') : 'w-0 p-0'}
-            p-0 md:rounded-r-[3rem]
+          className={`fixed top-16 left-0 h-[calc(100vh-4rem)] z-50 flex flex-col items-center transition-all duration-300 ease-in-out
+            bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl border-r border-slate-200/50 dark:border-slate-700/50
+            ${sidebarOpen ? (sidebarCollapsed ? 'w-16' : 'w-64') : 'w-0 -translate-x-full'}
+            ${sidebarCollapsed ? 'md:w-16' : 'md:w-64'}
             ${!sidebarOpen ? 'pointer-events-none' : ''}
+            md:translate-x-0
           `}
-          style={{ borderTopRightRadius: '3rem', borderBottomRightRadius: '3rem' }}
         >
-          {/* Collapse/Expand button (always visible) */}
+          {/* Collapse/Expand button (desktop only) */}
           <button
-            className="absolute top-4 right-2 text-xl text-white hover:text-slate-200 z-20 bg-slate-600/70 dark:bg-slate-800/70 rounded-full p-1 border border-slate-200 dark:border-slate-700 shadow"
+            className="absolute top-4 right-2 text-xl text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 z-20 bg-slate-100/70 dark:bg-slate-800/70 rounded-full p-1 border border-slate-200 dark:border-slate-700 shadow-sm transition-colors hidden md:block"
             onClick={() => setSidebarCollapsed((c) => !c)}
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             type="button"
           >
             {sidebarCollapsed ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
             ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             )}
           </button>
+          
           <div className={`flex flex-col items-center w-full h-full pt-16 pb-8 transition-all duration-300 ${sidebarCollapsed ? 'px-0' : 'px-4'}`}>
             {/* Logo */}
-            <div className={`mb-10 w-full flex items-center justify-center transition-all duration-300 ${sidebarCollapsed ? 'justify-center' : 'justify-start'}`}>
-              <img src="/window.svg" alt="Logo" className={`h-10 w-10 ${sidebarCollapsed ? '' : 'mr-2'}`} />
-              {!sidebarCollapsed && <span className="text-2xl font-bold text-white tracking-tight">One Piece Grid</span>}
+            <div className={`mb-8 w-full flex items-center justify-center transition-all duration-300 ${sidebarCollapsed ? 'justify-center' : 'justify-start'}`}>
+              <img src="/window.svg" alt="Logo" className={`h-8 w-8 ${sidebarCollapsed ? '' : 'mr-2'}`} />
+              {!sidebarCollapsed && <span className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">One Piece Grid</span>}
             </div>
+            
             {/* Nav */}
-            <nav className="flex flex-col gap-4 w-full">
+            <nav className="flex flex-col gap-3 w-full">
               <button
-                className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-slate-600/60 dark:hover:bg-slate-700/60 transition font-semibold text-white ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
+                className={`flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
                 onClick={() => alert('My Grid clicked!')}
               >
-                <FaThLarge className="text-xl" />
+                <FaThLarge className="text-lg" />
                 {!sidebarCollapsed && <span>My Grid</span>}
               </button>
               <button
-                className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-slate-600/60 dark:hover:bg-slate-700/60 transition font-semibold text-white ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
+                className={`flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
                 onClick={() => alert('Leaderboard clicked!')}
               >
-                <FaTrophy className="text-xl" />
+                <FaTrophy className="text-lg" />
                 {!sidebarCollapsed && <span>Leaderboard</span>}
               </button>
               <button
-                className={`flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-slate-600/60 dark:hover:bg-slate-700/60 transition font-semibold text-white ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
+                className={`flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 ${sidebarCollapsed ? 'justify-center px-0' : 'justify-start'}`}
                 onClick={() => alert('How To Play clicked!')}
               >
-                <FaQuestionCircle className="text-xl" />
+                <FaQuestionCircle className="text-lg" />
                 {!sidebarCollapsed && <span>How To Play</span>}
               </button>
             </nav>
-            {/* Removed duplicate sign-in button - authentication is handled in header */}
           </div>
         </aside>
-        {/* Main content (with left margin on desktop) */}
-        <div className="flex-1 flex flex-col min-h-screen md:ml-64 pt-16">
-          <main className="flex-1 flex flex-col items-center justify-start px-2 sm:px-4 md:px-8 py-4 md:py-8 w-full max-w-5xl mx-auto">
+        
+        {/* Main content (responsive margin) */}
+        <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarOpen && !sidebarCollapsed ? 'md:ml-64' : sidebarCollapsed ? 'md:ml-16' : ''}`}>
+          <main className="flex-1 flex flex-col items-center justify-start px-3 sm:px-6 py-4 sm:py-8 w-full max-w-6xl mx-auto">
             {children}
           </main>
         </div>
