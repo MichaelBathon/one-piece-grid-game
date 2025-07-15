@@ -18,9 +18,12 @@
     "@auth/core": "^0.34.2",
     "@auth/prisma-adapter": "^2.10.0",
     "@prisma/client": "^6.11.1",
+    "axios": "^1.10.0",
+    "cheerio": "^1.1.0",
     "daisyui": "^5.0.43",
     "next": "15.3.4",
     "next-auth": "^4.24.11",
+    "node-emoji": "^2.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0"

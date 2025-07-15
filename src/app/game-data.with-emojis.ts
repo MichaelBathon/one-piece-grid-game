@@ -16,7 +16,7 @@ export interface OnePieceCharacter {
   hints: string[];
   hardMode?: boolean;
   video?: string;
-  emojiClue?: string[];
+  emojiClue?: string;
 }
 
 const rawCharacters: OnePieceCharacter[] = [
@@ -41,8 +41,8 @@ const rawCharacters: OnePieceCharacter[] = [
       "He has a scar under his left eye."
     ],
     hardMode: false,
-    video: "https://www.youtube.com/embed/1QGgkYyqS-g?autoplay=1", // Luffy,
-    emojiClue: ["👒", "🐒", "🍖", "👒", "⚔", "🏴☠", "🌊", "🏴☠", "▶• . 0"]
+    video: "https://www.youtube.com/embed/1QGgkYyqS-g?autoplay=1", // Luffy
+    emojiClue: "👒🐒🍖👒⚔🏴☠🌊🏴☠▶• . 0"
   },
   // Roronoa Zoro (consolidated)
   {
@@ -64,7 +64,7 @@ const rawCharacters: OnePieceCharacter[] = [
     ],
     hardMode: false,
     video: "https://www.youtube.com/embed/lGQ6LCC32Xw?autoplay=1",
-    emojiClue: ["⚔", "🍙", "⚔", "☠", "🏴☠", "⚔", "▶• . 0"],
+    emojiClue: "⚔🍙⚔☠🏴☠⚔▶• . 0"
   },
   {
     name: "Nami",
@@ -84,8 +84,8 @@ const rawCharacters: OnePieceCharacter[] = [
       "She is known for her weather-based attacks."
     ],
     hardMode: false,
-    video: "https://www.youtube.com/embed/9fPvAzR_azo?autoplay=1", // Nami,
-    emojiClue: ["🍊", "🍊", "🗺", "💰", "🗺", "🧭", "💰"],
+    video: "https://www.youtube.com/embed/9fPvAzR_azo?autoplay=1", // Nami
+    emojiClue: "🍊🍊🗺💰🗺🧭💰"
   },
   {
     name: "Usopp",
@@ -105,8 +105,8 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is also known as Sogeking."
     ],
     hardMode: false,
-    video: "https://www.youtube.com/embed/_-CTSdyboUM?autoplay=1", // Usopp,
-    emojiClue: ["🤥", "🏹", "🎯", "👺", "👃", "🎭"],
+    video: "https://www.youtube.com/embed/_-CTSdyboUM?autoplay=1", // Usopp
+    emojiClue: "🤥🏹🎯👺👃🎭"
   },
   {
     name: "Sanji",
@@ -127,8 +127,8 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is a prince of Germa 66."
     ],
     hardMode: false,
-    video: "https://www.youtube.com/embed/I6eHaRQO2DY?autoplay=1", // Sanji,
-    emojiClue: ["࿓", "🚬", "👨", "🍳", "୭", "(࿓/   )  ﹏﹏﹏  "],
+    video: "https://www.youtube.com/embed/I6eHaRQO2DY?autoplay=1" // Sanji,
+    emojiClue: "࿓🚬👨🍳୭(࿓/   )  ﹏﹏﹏  ",
   },
   {
     name: "Tony Tony Chopper",
@@ -149,8 +149,8 @@ const rawCharacters: OnePieceCharacter[] = [
       "He loves cotton candy."
     ],
     hardMode: false,
-    video: "https://www.youtube.com/embed/RCOGMd9fMzI?autoplay=1", // Chopper,
-    emojiClue: ["🦌", "🏴☠", "🩺", "🍄", "💊", "🎩"],
+    video: "https://www.youtube.com/embed/RCOGMd9fMzI?autoplay=1" // Chopper,
+    emojiClue: "🦌🏴☠🩺🍄💊🎩",
   },
   {
     name: "Nico Robin",
@@ -171,8 +171,8 @@ const rawCharacters: OnePieceCharacter[] = [
       "She joined the crew after Alabasta."
     ],
     hardMode: false,
-    video: "https://www.youtube.com/embed/xJniMpp-l7k?autoplay=1", // Robin,
-    emojiClue: ["🌸", "📜", "📚", "🌺", "🔍"],
+    video: "https://www.youtube.com/embed/xJniMpp-l7k?autoplay=1" // Robin,
+    emojiClue: "🌸📜📚🌺🔍",
   },
   {
     name: "Franky",
@@ -192,8 +192,8 @@ const rawCharacters: OnePieceCharacter[] = [
       "He often shouts 'SUPER!'."
     ],
     hardMode: false,
-    video: "https://www.youtube.com/embed/v5ZQK_7WJC8?autoplay=1", // Franky,
-    emojiClue: ["🦾", "🤖", "🥤", "🛠", "🕶", "🔧"],
+    video: "https://www.youtube.com/embed/v5ZQK_7WJC8?autoplay=1" // Franky,
+    emojiClue: "🦾🤖🥤🛠🕶🔧",
   },
   {
     name: "Brook",
@@ -214,8 +214,8 @@ const rawCharacters: OnePieceCharacter[] = [
       "He often asks to see women's panties."
     ],
     hardMode: false,
-    video: "https://www.youtube.com/embed/hAvzPHgVB6Y?autoplay=1", // Brook,
-    emojiClue: ["💀", "🎻", "🎶", "🎩", "🎵", "☠"],
+    video: "https://www.youtube.com/embed/hAvzPHgVB6Y?autoplay=1" // Brook,
+    emojiClue: "💀🎻🎶🎩🎵☠",
   },
   {
     name: "Jinbe",
@@ -236,8 +236,8 @@ const rawCharacters: OnePieceCharacter[] = [
       "He joined the crew in Wano."
     ],
     hardMode: false,
-    video: "https://www.youtube.com/embed/wg65MSYqbIA?autoplay=1", // Jinbe,
-    emojiClue: ["🌊", "🐋", "👊", "🏴☠", "🥋", "🦈"],
+    video: "https://www.youtube.com/embed/wg65MSYqbIA?autoplay=1" // Jinbe,
+    emojiClue: "🌊🐋👊🏴☠🥋🦈",
   },
   // Marines
   {
@@ -259,7 +259,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He often throws cannonballs by hand."
     ],
     hardMode: false,
-    emojiClue: ["🐒", "💥", "👴", "👊", "🐵", "🦍"],
+    emojiClue: "🐒💥👴👊🐵🦍",
   },
   {
     name: "Sengoku",
@@ -281,7 +281,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He has a pet goat."
     ],
     hardMode: false,
-    emojiClue: ["✨", "👮♂", "👊", "👴", "🐐", "🌊"],
+    emojiClue: "✨👮♂👊👴🐐🌊",
   },
   {
     name: "Sakazuki (Akainu)",
@@ -303,7 +303,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He killed Ace at Marineford."
     ],
     hardMode: false,
-    emojiClue: ["🌋", "🔥", "👊", "👨✈", "🏴☠", "⚓"],
+    emojiClue: "🌋🔥👊👨✈🏴☠⚓",
   },
   {
     name: "Borsalino (Kizaru)",
@@ -325,7 +325,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is known for his catchphrase 'Yare Yare'."
     ],
     hardMode: false,
-    emojiClue: ["🥴", "🌟", "��", "🐓", "⛑"],
+    emojiClue: "🥴🌟👒🐓⛑",
   },
   {
     name: "Kuzan (Aokiji)",
@@ -347,7 +347,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He rides a bicycle across the sea."
     ],
     hardMode: false,
-    emojiClue: ["❄", "🧊", "🕶", "🌊", "🚴♂", "🥶"],
+    emojiClue: "❄🧊🕶🌊🚴♂🥶",
   },
   {
     name: "Smoker",
@@ -369,7 +369,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He partnered with Tashigi."
     ],
     hardMode: false,
-    emojiClue: ["🚬", "💨", "🌬", "🚭", "🔥 ☠ ☠ "],
+    emojiClue: "🚬💨🌬🚭🔥 ☠ ☠ ",
   },
   {
     name: "Tashigi",
@@ -390,7 +390,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "She resembles Zoro's childhood friend."
     ],
     hardMode: false,
-    emojiClue: ["⚔", "👓", "📚", "👩✈", "👚", "👩", "⚖"],
+    emojiClue: "⚔👓📚👩✈👚👩⚖",
   },
   {
     name: "Coby",
@@ -411,7 +411,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He has pink hair."
     ],
     hardMode: false,
-    emojiClue: ["🌸", "👮♂", "🎖", "📈", "👊", "🚢"],
+    emojiClue: "🌸👮♂🎖📈👊🚢",
   },
   // Princesses
   {
@@ -430,7 +430,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "She has a pet duck named Karoo."
     ],
     hardMode: false,
-    emojiClue: ["🦆", "💙", "👸", "🏜", "👑", "🐫"],
+    emojiClue: "🦆💙👸🏜👑🐫",
   },
   {
     name: "Rebecca",
@@ -448,7 +448,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "She is known for her kindness."
     ],
     hardMode: false,
-    emojiClue: ["*‧*‧ ࿔  🎀🌹"],
+    emojiClue: "*‧*‧ ࿔  🎀🌹",
   },
   {
     name: "Shirahoshi",
@@ -466,7 +466,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "She is the daughter of King Neptune."
     ],
     hardMode: false,
-    emojiClue: ["🧜♀", "👑", "🌊", "🌸", "🐋", "🐠"],
+    emojiClue: "🧜♀👑🌊🌸🐋🐠",
   },
   // Arc Villains
   {
@@ -487,7 +487,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He leads Baroque Works."
     ],
     hardMode: false,
-    emojiClue: ["🐊"],
+    emojiClue: "🐊",
   },
   {
     name: "Don Krieg",
@@ -506,7 +506,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is ruthless and cunning."
     ],
     hardMode: false,
-    emojiClue: ["🏴☠", "🛡", "💣", "🔫", "🎽", "🚢"],
+    emojiClue: "🏴☠🛡💣🔫🎽🚢",
   },
   {
     name: "Enel",
@@ -526,7 +526,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He was defeated by Luffy."
     ],
     hardMode: false,
-    emojiClue: ["⚡", "👑", "🌩", "��", "⚡", "👂"],
+    emojiClue: "⚡👑🌩🥁⚡👂",
   },
   // Whitebeard Pirates
   {
@@ -549,7 +549,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is the son of Gol D. Roger."
     ],
     hardMode: false,
-    emojiClue: ["♠", "🎩", "🏴☠", "🍖", "🕊"],
+    emojiClue: "♠🎩🏴☠🍖🕊",
   },
   // Heart Pirates
   // Trafalgar D. Water Law (consolidated)
@@ -573,7 +573,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is from Flevance, the White City."
     ],
     hardMode: false,
-    emojiClue: ["⚓", "🏴☠", "🫀", "🩺", "🌊", "⚖"],
+    emojiClue: "⚓🏴☠🫀🩺🌊⚖",
   },
   // Bepo (consolidated)
   {
@@ -593,7 +593,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is a loyal crewmate to Law."
     ],
     hardMode: false,
-    emojiClue: ["🐻", "❄", "🧡", "🥋", "⚔", "❤", "🩹"],
+    emojiClue: "🐻❄🧡🥋⚔💉❤🩹",
   },
   {
     name: "Shachi",
@@ -611,7 +611,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is loyal to Law."
     ],
     hardMode: false,
-    emojiClue: ["🐻", "❄", "🎧", "🧢", "⛵", "🏴☠", "🚢"],
+    emojiClue: "🐻❄🎧🧢⛵🏴☠🚢",
   },
   {
     name: "Penguin",
@@ -629,7 +629,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is loyal to Law."
     ],
     hardMode: false,
-    emojiClue: ["🐧", "(••)", "🐧", "｡‧", "🐧", "｡🐧", "🐧"],
+    emojiClue: "🐧૮(••)🐧｡‧🐧‧｡🐧",
   },
   {
     name: "Jean Bart",
@@ -647,7 +647,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is from North Blue."
     ],
     hardMode: false,
-    emojiClue: ["��", "🏴☠", "👤", "🌊", "✊", "🛶"],
+    emojiClue: "🔨🏴☠👤🌊✊🛶",
   },
   {
     name: "Ikkaku",
@@ -665,7 +665,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "She is part of the Heart Pirates' crew."
     ],
     hardMode: true,
-    emojiClue: ["👨", "🦲", "👊", "⛩", "🀄", "⚔", "🤺"],
+    emojiClue: "👨🦲👊⛩🀄⚔🤺",
   },
   {
     name: "Clione",
@@ -683,7 +683,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is part of the Heart Pirates' crew."
     ],
     hardMode: true,
-    emojiClue: ["👼", "🐌", "🐚", "🌊", "💧", "👻"],
+    emojiClue: "👼🐌🐚🌊💧👻",
   },
   {
     name: "Uni",
@@ -701,7 +701,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is part of the Heart Pirates' crew."
     ],
     hardMode: true,
-    emojiClue: ["🎓", "🏫", "🦄", "🎓 ｡ .."],
+    emojiClue: "🎓🏫🦄🎓 ｡ ..",
   },
   {
     name: "Cotton",
@@ -719,7 +719,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is part of the Heart Pirates' crew."
     ],
     hardMode: true,
-    emojiClue: ["☁", "🧑🏿", "🌾", "👨🏿🌾", "🌾", "🧶", "🌿", "💭", "✋🏿", "🧑🏿", "🦲", "🤚🏿", "🔫", "👮🏻", "🧑🏿🌾"],
+    emojiClue: "☁🧑🏿🌾👨🏿🌾🌾🧶🌿💭✋🏿🧑🏿🦲🤚🏿🔫👮🏻🧑🏿🌾",
   },
   // Worst Generation (Supernovas)
   {
@@ -742,7 +742,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He fought alongside Luffy and Law against Big Mom and Kaido."
     ],
     hardMode: false,
-    emojiClue: ["��", "🧲", "🏴☠", "🔴", "😡", "🔩"],
+    emojiClue: "🦾🧲🏴☠🔴😡🔩",
   },
   {
     name: "Killer",
@@ -763,7 +763,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is a member of the Worst Generation."
     ],
     hardMode: false,
-    emojiClue: ["🔪", "☠", "😁", "🔪", "🩸", "︻💥", "☠", "༺", "☠", "༻"],
+    emojiClue: "🔪☠😁🔪🩸︻💥☠༺☠༻",
   },
   {
     name: "Scratchmen Apoo",
@@ -785,7 +785,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is a longarm tribe member."
     ],
     hardMode: false,
-    emojiClue: ["🏴☠", "👖", "🎵", "👄", "🎹", "😬"],
+    emojiClue: "🏴☠👖🎵👄🎹😬",
   },
   {
     name: "Basil Hawkins",
@@ -807,7 +807,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is known as the Magician."
     ],
     hardMode: false,
-    emojiClue: ["🌾", "🃏", "🎩", "🔮", "⚔", "🎴"],
+    emojiClue: "🌾🃏🎩🔮⚔🎴",
   },
   {
     name: "X Drake",
@@ -829,7 +829,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is known for his dinosaur transformation."
     ],
     hardMode: false,
-    emojiClue: ["🦖", "❌", "🏴☠", "⚔", "👮♂", "⚓"],
+    emojiClue: "🦖❌🏴☠⚔👮♂⚓",
   },
   {
     name: "Capone Bege",
@@ -851,7 +851,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is married to Charlotte Chiffon."
     ],
     hardMode: false,
-    emojiClue: ["🚬", "🎩", "🤵", "🔫", "��", "🗡"],
+    emojiClue: "🚬🎩🤵🔫👔🗡",
   },
   {
     name: "Jewelry Bonney",
@@ -873,7 +873,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "She is known for her appetite."
     ],
     hardMode: false,
-    emojiClue: ["🌸", "🍕", "🍔", "👵", "🍗", "⏳"],
+    emojiClue: "🌸🍕🍔👵🍗⏳",
   },
   {
     name: "Urouge",
@@ -894,7 +894,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He defeated one of Big Mom's Sweet Commanders."
     ],
     hardMode: false,
-    emojiClue: ["🏴☠", "🍖", "💥", "🔮", "🙏", "👼"],
+    emojiClue: "🏴☠🍖💥🔮🙏👼",
   },
   // Yonko (Four Emperors)
   {
@@ -916,7 +916,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is known for his red hair and missing arm."
     ],
     hardMode: false,
-    emojiClue: ["🏴☠", "🦰", "☠", "🍺", "��", "🗡"],
+    emojiClue: "🏴☠🦰☠🍺👒🗡",
   },
   {
     name: "Benn Beckman",
@@ -937,7 +937,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is a notable Yonko crew member."
     ],
     hardMode: false,
-    emojiClue: ["🧢", "🚬", "🔫", "🏴☠", "🧠", "⚓"],
+    emojiClue: "🧢🚬🔫🏴☠🧠⚓",
   },
   {
     name: "Charlotte Linlin (Big Mom)",
@@ -959,7 +959,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "She rules Totto Land."
     ],
     hardMode: false,
-    emojiClue: ["🎡", "🎪", "🐆", "👵", "👴", "💨"],
+    emojiClue: "🎡🎪🐆👵👴💨",
   },
   {
     name: "Charlotte Katakuri",
@@ -981,7 +981,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He fought Luffy in the Mirror World."
     ],
     hardMode: false,
-    emojiClue: ["🍩", "🧣", "💪", "🍡", "🍬", "🥊"],
+    emojiClue: "🍩🧣💪🍡🍬🥊",
   },
   {
     name: "Kaido",
@@ -1003,7 +1003,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He ruled Wano until his defeat."
     ],
     hardMode: false,
-    emojiClue: ["🐉", "🏴☠", "🐲", "👹", "🔥", "🌊"],
+    emojiClue: "🐉🏴☠🐲👹🔥🌊",
   },
   {
     name: "King",
@@ -1025,7 +1025,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is Kaido's right-hand man."
     ],
     hardMode: false,
-    emojiClue: ["👑", "🤴🏻"],
+    emojiClue: "👑🤴🏻",
   },
   {
     name: "Marshall D. Teach (Blackbeard)",
@@ -1047,7 +1047,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is a major antagonist in the series."
     ],
     hardMode: false,
-    emojiClue: ["🇲🇭", "🇨🇮", "🏴☠", "🆔", "®"],
+    emojiClue: "🇲🇭🇨🇮🏴☠🆔®",
   },
   {
     name: "Shiryu",
@@ -1068,7 +1068,7 @@ const rawCharacters: OnePieceCharacter[] = [
       "He is a notable Yonko crew member."
     ],
     hardMode: false,
-    emojiClue: ["🗡", "🏴☠", "🖤", "⚔", "👻", "👤", "⚖"],
+    emojiClue: "🗡🏴☠🖤⚔👻👤⚖",
   },
 ] as OnePieceCharacter[];
 
@@ -1225,7 +1225,6 @@ export function getSimpleGridGameData(date: Date = new Date(), hardMode: boolean
     answer: string;
     hints: string[];
     video?: string;
-    emojiClue?: string[];
   }[];
 } {
   const allowedKeys: (keyof OnePieceCharacter)[] = [
@@ -1315,8 +1314,7 @@ export function getSimpleGridGameData(date: Date = new Date(), hardMode: boolean
       value2: clues.value2,
       answer: char.name,
       hints: char.hints,
-      video: char.video,
-      emojiClue: char.emojiClue
+      video: char.video
     };
   });
   

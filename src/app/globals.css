@@ -26,6 +26,11 @@ body {
   scroll-behavior: smooth;
 }
 
+/* Ensure all text elements inherit color from parent (fixes white-on-white bug) */
+span, div, p, h1, h2, h3, h4, h5, h6, label {
+  color: inherit;
+}
+
 /* Mobile-specific improvements */
 @media (max-width: 768px) {
   /* Ensure minimum touch target size */

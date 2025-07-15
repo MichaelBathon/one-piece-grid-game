@@ -11,9 +11,13 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-slate-50 dark:bg-slate-900 min-h-screen">
         <Providers>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <div className="flex flex-col min-h-screen w-full">
+              {children}
+            </div>
+          </ThemeProvider>
         </Providers>
       </body>
     </html>
